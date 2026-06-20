@@ -1,166 +1,89 @@
-# BanQuito Core V2 - Infraestructura Docker Only
+# Kong despliegue
 
-Esta carpeta levanta el ecosistema del Core BanQuito V2 usando únicamente Docker Compose. No requiere scripts PowerShell/Bash.
+Overlay liviano para desplegar Kong en una VM separada de los microservicios Core.
 
-## Estructura esperada
+Topologia prevista:
 
-La carpeta `infra` debe estar al mismo nivel que los microservicios y la carpeta `database`:
+- `mapi`: VM de Kong con IP privada `10.128.0.8`
+- `backdocker`: VM de Core con IP privada `10.128.0.9`
 
-```text
-banquito-core/
-├── identity-access-service/
-├── core-customer-service/
-├── core-admin-service/
-├── core-accounting-service/
-├── core-account-service/
-├── document-service/
-├── notification-service/
-├── database/
-│   ├── mysql/
-│   │   ├── 00_identity_access_db.sql
-│   │   ├── 01_core_customer_db.sql
-│   │   ├── 02_core_admin_db.sql
-│   │   ├── 03_core_account_db.sql
-│   │   ├── 04_core_accounting_db.sql
-│   │   └── 06_notification_db.sql
-│   └── mongodb/
-│       └── 05_document_mongodb.js
-└── infra/
-    ├── docker-compose.yml
-    ├── .env.example
-    └── kong/
-        └── kong.yml
-```
+## Que cambia
 
-## Decisiones incluidas
+- Este `kong/kong.yml` enruta Core por IP privada de la VM `backdocker`.
+- Se incluyen solo rutas de Core para evitar upstreams rotos de Switch en esta variante.
+- El Admin API de Kong queda publicado solo en `127.0.0.1:8001`.
+- El status endpoint queda publicado solo en `127.0.0.1:8100`.
 
-- RabbitMQ no se despliega en el Core V2. El Core usa REST/OpenAPI vía Kong y gRPC interno.
-- Kong es el único punto de entrada HTTP principal.
-- Los microservicios se construyen desde sus Dockerfiles internos.
-- Las bases de datos usan volúmenes Docker persistentes.
-- Mailpit queda habilitado como SMTP local para pruebas. En nube puede reemplazarse por SMTP real cambiando variables de entorno.
+## Archivos
 
-## Primer despliegue
+- `docker-compose.yml`: stack de Kong para VM separada
+- `.env.example`: plantilla minima de entorno
+- `kong/kong.yml`: rutas y plugins para Core via `10.128.0.9`
 
-Desde `banquito-core/infra`:
+## Levantamiento en `mapi`
 
 ```powershell
+cd C:\ruta\a\kong-despliegue
 copy .env.example .env
+docker compose up -d
 ```
 
-Edita `.env` y cambia contraseñas antes de nube.
-
-Levantar todo:
+## Validacion rapida en `mapi`
 
 ```powershell
-docker compose --env-file .env up -d --build
+curl.exe -i http://127.0.0.1:8100/status
+docker logs banquito-deck-sync
+curl.exe -i http://localhost:8000/api/v1/auth/login
 ```
 
-Ver estado:
+## Cambios requeridos en `backdocker`
 
-```powershell
-docker compose --env-file .env ps
+Los servicios Core no pueden quedarse solo con `expose`, porque Kong vive en otra VM. Debes publicar al host privado los puertos HTTP REST `8081` a `8087`.
+
+Ejemplo de ajuste en el compose de Core:
+
+```yaml
+identity-access-service:
+  ports:
+    - "10.128.0.9:8081:8081"
+
+core-customer-service:
+  ports:
+    - "10.128.0.9:8082:8082"
+
+core-admin-service:
+  ports:
+    - "10.128.0.9:8083:8083"
+
+core-accounting-service:
+  ports:
+    - "10.128.0.9:8084:8084"
+
+core-account-service:
+  ports:
+    - "10.128.0.9:8085:8085"
+
+document-service:
+  ports:
+    - "10.128.0.9:8086:8086"
+
+notification-service:
+  ports:
+    - "10.128.0.9:8087:8087"
 ```
 
-Ver logs:
+No hace falta publicar los puertos gRPC `9092` a `9097` para Kong.
 
-```powershell
-docker compose --env-file .env logs -f core-account-service
-```
+## Firewall recomendado
 
-Apagar sin borrar datos:
+Permitir solo trafico privado desde `10.128.0.8` hacia `10.128.0.9` en:
 
-```powershell
-docker compose --env-file .env down
-```
+- TCP `8081-8087`
 
-Borrar contenedores y volúmenes, solo para reinicio total de laboratorio:
+No abrir esos puertos a Internet.
 
-```powershell
-docker compose --env-file .env down -v
-```
+## Notas
 
-## Puertos expuestos en host
-
-| Puerto | Uso |
-|---:|---|
-| 8000 | Kong Proxy/API Gateway |
-| 8100 | Kong status, solo localhost |
-| 8025 | Mailpit UI, solo localhost |
-| 1025 | Mailpit SMTP, solo localhost |
-
-Las bases de datos y microservicios no se exponen al host por defecto. Se comunican por la red Docker `banquito-net`.
-
-## Volúmenes persistentes
-
-Docker Compose crea volúmenes nombrados para conservar datos:
-
-```text
-mysql_identity_data
-mysql_customer_data
-mysql_admin_data
-mysql_account_data
-mysql_accounting_data
-mysql_notification_data
-mongo_document_data
-kong_postgres_data
-```
-
-Mientras no ejecutes `docker compose down -v`, los datos se conservan entre reinicios.
-
-## Prueba rápida por Kong
-
-```powershell
-$loginBody = @{
-  username = "admin.core"
-  password = "password"
-} | ConvertTo-Json
-
-$loginResponse = Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8000/api/v1/auth/login" `
-  -ContentType "application/json" `
-  -Body $loginBody
-
-$token = $loginResponse.accessToken
-
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8000/api/v1/accounts/0010515383395/balance" `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-## SMTP local con Mailpit
-
-Con `.env` local:
-
-```env
-NOTIFICATION_DELIVERY_MODE=SMTP
-SMTP_HOST=mailpit
-SMTP_PORT=1025
-SMTP_AUTH=false
-SMTP_STARTTLS_ENABLE=false
-SMTP_FROM=no-reply@banquito.com
-```
-
-UI local:
-
-```text
-http://localhost:8025
-```
-
-Para nube, cambia únicamente variables SMTP:
-
-```env
-SMTP_HOST=smtp.proveedor.com
-SMTP_PORT=587
-SMTP_USERNAME=usuario-o-api-key
-SMTP_PASSWORD=secreto
-SMTP_AUTH=true
-SMTP_STARTTLS_ENABLE=true
-SMTP_FROM=no-reply@banquito.com
-```
-
-## Docker Hub / Registry
-
-No es obligatorio usar Docker Hub. Este compose hace `build` desde el código fuente. Para un flujo más profesional con CI/CD, se puede construir y publicar cada imagen a un registry y luego reemplazar `build:` por `image:` con etiquetas versionadas.
+- Si la IP privada de `backdocker` cambia, actualiza `kong/kong.yml`.
+- Si luego tienes DNS privado, conviene cambiar `10.128.0.9` por un hostname interno estable.
+- Esta carpeta no reemplaza `banquito-kong`; solo agrega una variante de despliegue para VMs separadas.

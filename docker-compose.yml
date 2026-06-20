@@ -1,455 +1,21 @@
-name: banquito-core-v2
+name: banquito-kong-private-vm
 
 services:
-  mysql-identity:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-    container_name: banquito-mysql-identity
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: banquito_identity_access_db
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_identity_data:/var/lib/mysql
-      - ../database/mysql/00_identity_access_db.sql:/docker-entrypoint-initdb.d/00_identity_access_db.sql:ro
-      - ../database/mysql/10_identity_seed.sql:/docker-entrypoint-initdb.d/10_identity_seed.sql:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-
-  mysql-customer:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-    container_name: banquito-mysql-customer
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: banquito_core_customer_db
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_customer_data:/var/lib/mysql
-      - ../database/mysql/01_core_customer_db.sql:/docker-entrypoint-initdb.d/01_core_customer_db.sql:ro
-      - ../database/mysql/10_customer_seed.sql:/docker-entrypoint-initdb.d/10_customer_seed.sql:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-
-  mysql-admin:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-    container_name: banquito-mysql-admin
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: banquito_core_admin_db
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_admin_data:/var/lib/mysql
-      - ../database/mysql/02_core_admin_db.sql:/docker-entrypoint-initdb.d/02_core_admin_db.sql:ro
-      - ../database/mysql/10_admin_seed.sql:/docker-entrypoint-initdb.d/10_admin_seed.sql:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-
-  mysql-account:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-    container_name: banquito-mysql-account
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: banquito_core_account_db
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_account_data:/var/lib/mysql
-      - ../database/mysql/03_core_account_db.sql:/docker-entrypoint-initdb.d/03_core_account_db.sql:ro
-      - ../database/mysql/10_account_seed.sql:/docker-entrypoint-initdb.d/10_account_seed.sql:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-
-  mysql-accounting:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-    container_name: banquito-mysql-accounting
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: banquito_core_accounting_db
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_accounting_data:/var/lib/mysql
-      - ../database/mysql/04_core_accounting_db.sql:/docker-entrypoint-initdb.d/04_core_accounting_db.sql:ro
-      - ../database/mysql/10_accounting_seed.sql:/docker-entrypoint-initdb.d/10_accounting_seed.sql:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-
-  mysql-notification:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
-    container_name: banquito-mysql-notification
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: banquito_notification_db
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_notification_data:/var/lib/mysql
-      - ../database/mysql/06_notification_db.sql:/docker-entrypoint-initdb.d/06_notification_db.sql:ro
-      - ../database/mysql/10_notification_seed.sql:/docker-entrypoint-initdb.d/10_notification_seed.sql:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-
-  mongo-document:
-    image: mongo:7
-    container_name: banquito-mongo-document
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: banquito_document_db
-    volumes:
-      - mongo_document_data:/data/db
-      - ../database/mongodb/05_document_mongodb.js:/docker-entrypoint-initdb.d/05_document_mongodb.js:ro
-      - ../database/mongodb/10_document_seed.js:/docker-entrypoint-initdb.d/10_document_seed.js:ro
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD-SHELL", "mongosh -u ${MONGO_INITDB_ROOT_USERNAME} -p ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' --quiet"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
-
-  mailpit:
-    image: axllent/mailpit:v1.20
-    container_name: banquito-mailpit
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      MP_MAX_MESSAGES: ${MAILPIT_MAX_MESSAGES:-5000}
-    ports:
-      - "127.0.0.1:8025:8025"
-      - "127.0.0.1:1025:1025"
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8025/api/v1/info"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-
-  identity-access-service:
-    build:
-      context: ../identity-access-service
-      dockerfile: Dockerfile
-    image: banquito/identity-access-service:${APP_VERSION:-local}
-    container_name: banquito-identity-access-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_APPLICATION_NAME: identity-access-service
-      SERVER_PORT: 8081
-      APP_TIMEZONE: ${TZ}
-      IDENTITY_DB_URL: jdbc:mysql://mysql-identity:3306/banquito_identity_access_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
-      IDENTITY_DB_USER: ${MYSQL_USER}
-      IDENTITY_DB_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
-      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-7}
-      DEMO_DATA_ENABLED: ${IDENTITY_DEMO_DATA_ENABLED:-true}
-      DEMO_PASSWORD: ${IDENTITY_DEMO_PASSWORD:-password}
-      JPA_DDL_AUTO: validate
-      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-true}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
-      ACTUATOR_ENDPOINTS: health,info
-      ACTUATOR_HEALTH_DETAILS: always
-      OPENAPI_DOCS_PATH: /api-docs
-      SWAGGER_UI_PATH: /swagger-ui.html
-    expose: ["8081"]
-    depends_on:
-      mysql-identity:
-        condition: service_healthy
-    networks: [banquito-net]
-
-  core-customer-service:
-    build:
-      context: ../core-customer-service
-      dockerfile: Dockerfile
-    image: banquito/core-customer-service:${APP_VERSION:-local}
-    container_name: banquito-core-customer-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_APPLICATION_NAME: core-customer-service
-      SERVER_PORT: 8082
-      APP_TIME_ZONE: ${TZ}
-      CUSTOMER_DB_URL: jdbc:mysql://mysql-customer:3306/banquito_core_customer_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
-      CUSTOMER_DB_USER: ${MYSQL_USER}
-      CUSTOMER_DB_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      JPA_DDL_AUTO: validate
-      HIBERNATE_FORMAT_SQL: false
-      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-true}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
-      DEMO_DATA_ENABLED: ${CUSTOMER_DEMO_DATA_ENABLED:-false}
-      GRPC_SERVER_PORT: 9092
-      ACTUATOR_EXPOSURE: health,info
-      ACTUATOR_HEALTH_SHOW_DETAILS: always
-      OPENAPI_DOCS_PATH: /api-docs
-      SWAGGER_UI_PATH: /swagger-ui.html
-    expose: ["8082", "9092"]
-    depends_on:
-      mysql-customer:
-        condition: service_healthy
-    networks: [banquito-net]
-
-  core-admin-service:
-    build:
-      context: ../core-admin-service
-      dockerfile: Dockerfile
-    image: banquito/core-admin-service:${APP_VERSION:-local}
-    container_name: banquito-core-admin-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_APPLICATION_NAME: core-admin-service
-      SERVER_PORT: 8083
-      APP_TIME_ZONE: ${TZ}
-      ADMIN_DB_URL: jdbc:mysql://mysql-admin:3306/banquito_core_admin_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
-      ADMIN_DB_USER: ${MYSQL_USER}
-      ADMIN_DB_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      DEMO_DATA_ENABLED: ${ADMIN_DEMO_DATA_ENABLED:-true}
-      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-true}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
-      HIBERNATE_DDL_AUTO: validate
-      HIBERNATE_FORMAT_SQL: false
-      MANAGEMENT_HEALTH_DETAILS: always
-      GRPC_SERVER_PORT: 9093
-    expose: ["8083", "9093"]
-    depends_on:
-      mysql-admin:
-        condition: service_healthy
-    networks: [banquito-net]
-
-  core-accounting-service:
-    build:
-      context: ../core-accounting-service
-      dockerfile: Dockerfile
-    image: banquito/core-accounting-service:${APP_VERSION:-local}
-    container_name: banquito-core-accounting-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_APPLICATION_NAME: core-accounting-service
-      SERVER_PORT: 8084
-      APP_TIMEZONE: ${TZ}
-      ACCOUNTING_DB_URL: jdbc:mysql://mysql-accounting:3306/banquito_core_accounting_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
-      ACCOUNTING_DB_USER: ${MYSQL_USER}
-      ACCOUNTING_DB_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      JPA_DDL_AUTO: validate
-      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-true}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
-      ACTUATOR_ENDPOINTS: health,info
-      ACTUATOR_HEALTH_DETAILS: always
-      OPENAPI_DOCS_PATH: /api-docs
-      SWAGGER_UI_PATH: /swagger-ui.html
-      ACCOUNTING_DEFAULT_CUTOFF_TIME: ${ACCOUNTING_DEFAULT_CUTOFF_TIME:-20:00:00}
-      DOCUMENT_SERVICE_URL: http://document-service:8086
-      NOTIFICATION_SERVICE_URL: http://notification-service:8087
-      DB_MAX_POOL_SIZE: ${DB_MAX_POOL_SIZE:-10}
-      DB_MIN_IDLE: ${DB_MIN_IDLE:-2}
-      DB_CONNECTION_TIMEOUT_MS: ${DB_CONNECTION_TIMEOUT_MS:-30000}
-      HIBERNATE_FORMAT_SQL: false
-      GRPC_SERVER_PORT: 9094
-    expose: ["8084", "9094"]
-    depends_on:
-      mysql-accounting:
-        condition: service_healthy
-    networks: [banquito-net]
-
-  core-account-service:
-    build:
-      context: ../core-account-service
-      dockerfile: Dockerfile
-    image: banquito/core-account-service:${APP_VERSION:-local}
-    container_name: banquito-core-account-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_APPLICATION_NAME: core-account-service
-      SERVER_PORT: 8085
-      APP_TIMEZONE: ${TZ}
-      ACCOUNT_DB_URL: jdbc:mysql://mysql-account:3306/banquito_core_account_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
-      ACCOUNT_DB_USER: ${MYSQL_USER}
-      ACCOUNT_DB_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      JPA_DDL_AUTO: validate
-      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-true}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
-      ACTUATOR_ENDPOINTS: health,info
-      ACTUATOR_HEALTH_DETAILS: always
-      OPENAPI_DOCS_PATH: /api-docs
-      SWAGGER_UI_PATH: /swagger-ui.html
-      DB_MAX_POOL_SIZE: ${DB_MAX_POOL_SIZE:-10}
-      DB_MIN_IDLE: ${DB_MIN_IDLE:-2}
-      DB_CONNECTION_TIMEOUT_MS: ${DB_CONNECTION_TIMEOUT_MS:-30000}
-      HIBERNATE_FORMAT_SQL: false
-      CUSTOMER_GRPC_HOST: core-customer-service
-      CUSTOMER_GRPC_PORT: 9092
-      ADMIN_GRPC_HOST: core-admin-service
-      ADMIN_GRPC_PORT: 9093
-      ACCOUNTING_GRPC_HOST: core-accounting-service
-      ACCOUNTING_GRPC_PORT: 9094
-      NOTIFICATION_SERVICE_URL: http://notification-service:8087
-      DOCUMENT_SERVICE_URL: http://document-service:8086
-      RECENT_TRANSACTIONS_LIMIT: ${RECENT_TRANSACTIONS_LIMIT:-20}
-      ACCOUNTING_DATE_SOURCE: ${ACCOUNTING_DATE_SOURCE:-local}
-    expose: ["8085"]
-    depends_on:
-      mysql-account:
-        condition: service_healthy
-      core-customer-service:
-        condition: service_started
-      core-admin-service:
-        condition: service_started
-      core-accounting-service:
-        condition: service_started
-    networks: [banquito-net]
-
-  document-service:
-    build:
-      context: ../document-service
-      dockerfile: Dockerfile
-    image: banquito/document-service:${APP_VERSION:-local}
-    container_name: banquito-document-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_APPLICATION_NAME: document-service
-      SERVER_PORT: 8086
-      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo-document:27017/banquito_document_db?authSource=admin
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      DOCUMENT_DEMO_ENABLED: ${DOCUMENT_DEMO_ENABLED:-true}
-      ACTUATOR_EXPOSURE: health,info
-      ACTUATOR_HEALTH_DETAILS: always
-      LOG_LEVEL_ROOT: INFO
-      LOG_LEVEL_APP: INFO
-      DOCUMENT_GRPC_PORT: 9096
-      DOCUMENT_STORAGE_MODE: ${DOCUMENT_STORAGE_MODE:-MONGODB_PAYLOAD}
-      DOCUMENT_STORAGE_BASE_PATH: /documents
-    expose: ["8086", "9096"]
-    depends_on:
-      mongo-document:
-        condition: service_healthy
-    networks: [banquito-net]
-
-  notification-service:
-    build:
-      context: ../notification-service
-      dockerfile: Dockerfile
-    image: banquito/notification-service:${APP_VERSION:-local}
-    container_name: banquito-notification-service
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8087
-      NOTIFICATION_DB_URL: jdbc:mysql://mysql-notification:3306/banquito_notification_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
-      NOTIFICATION_DB_USERNAME: ${MYSQL_USER}
-      NOTIFICATION_DB_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_ISSUER: ${JWT_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-      NOTIFICATION_DELIVERY_MODE: ${NOTIFICATION_DELIVERY_MODE:-SMTP}
-      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-SMTP}
-      SMTP_FROM: ${SMTP_FROM:-no-reply@banquito.com}
-      SMTP_REPLY_TO: ${SMTP_REPLY_TO:-}
-      SMTP_HOST: ${SMTP_HOST:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_AUTH: ${SMTP_AUTH:-false}
-      SMTP_STARTTLS_ENABLE: ${SMTP_STARTTLS_ENABLE:-false}
-    expose: ["8087"]
-    depends_on:
-      mysql-notification:
-        condition: service_healthy
-      mailpit:
-        condition: service_started
-    networks: [banquito-net]
-
   kong-database:
     image: postgres:15-alpine
     container_name: banquito-kong-postgres
     restart: unless-stopped
     environment:
-      TZ: ${TZ}
+      TZ: ${TZ:-America/Guayaquil}
       POSTGRES_DB: ${KONG_PG_DATABASE}
       POSTGRES_USER: ${KONG_PG_USER}
       POSTGRES_PASSWORD: ${KONG_PG_PASSWORD}
     volumes:
       - kong_postgres_data:/var/lib/postgresql/data
-    networks: [banquito-net]
+    networks:
+      - kong-infra
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${KONG_PG_USER} -d ${KONG_PG_DATABASE}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -459,8 +25,7 @@ services:
     image: kong:3.9
     container_name: banquito-kong-migrations
     restart: "no"
-    command: >
-      sh -c "kong migrations bootstrap || (kong migrations up && kong migrations finish)"
+    command: sh -c "kong migrations bootstrap || (kong migrations up && kong migrations finish)"
     environment:
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-database
@@ -470,14 +35,15 @@ services:
     depends_on:
       kong-database:
         condition: service_healthy
-    networks: [banquito-net]
+    networks:
+      - kong-infra
 
   kong-gateway:
     image: kong:3.9
     container_name: banquito-kong-gateway
     restart: unless-stopped
     environment:
-      TZ: ${TZ}
+      TZ: ${TZ:-America/Guayaquil}
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-database
       KONG_PG_DATABASE: ${KONG_PG_DATABASE}
@@ -493,13 +59,16 @@ services:
       KONG_LOG_LEVEL: ${KONG_LOG_LEVEL:-notice}
     ports:
       - "8000:8000"
+      - "8010:8000"
+      - "127.0.0.1:8001:8001"
       - "127.0.0.1:8100:8100"
     depends_on:
       kong-database:
         condition: service_healthy
       kong-migrations:
         condition: service_completed_successfully
-    networks: [banquito-net]
+    networks:
+      - kong-infra
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 15s
@@ -508,28 +77,25 @@ services:
       start_period: 30s
 
   deck-sync:
-    image: kong/deck:latest
+    image: kong/deck:v1.62.1
     container_name: banquito-deck-sync
     restart: "no"
-    command: ["gateway", "sync", "/kong/kong.yml", "--kong-addr", "http://kong-gateway:8001"]
-    volumes:
-      - ./kong:/kong:ro
     depends_on:
       kong-gateway:
         condition: service_healthy
-    networks: [banquito-net]
+    network_mode: service:kong-gateway
+    volumes:
+      - ./kong/kong.yml:/kong/kong.yml:ro
+    command:
+      - gateway
+      - sync
+      - /kong/kong.yml
+      - --kong-addr
+      - http://localhost:8001
 
 networks:
-  banquito-net:
-    name: banquito-net
+  kong-infra:
     driver: bridge
 
 volumes:
-  mysql_identity_data:
-  mysql_customer_data:
-  mysql_admin_data:
-  mysql_account_data:
-  mysql_accounting_data:
-  mysql_notification_data:
-  mongo_document_data:
-  kong_postgres_data:
+  kong_postgres_data: {}
