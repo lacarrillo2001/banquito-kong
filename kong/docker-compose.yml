@@ -1,0 +1,174 @@
+name: banquito-kong
+
+services:
+  kng-db:
+    image: postgres:15-alpine
+    container_name: banquito-kng-db
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      POSTGRES_DB: ${KONG_PG_DATABASE}
+      POSTGRES_USER: ${KONG_PG_USER}
+      POSTGRES_PASSWORD: ${KONG_PG_PASSWORD}
+    volumes:
+      - kong_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KONG_PG_USER} -d ${KONG_PG_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  kng-migrations:
+    image: kong:3.9
+    container_name: banquito-kng-migrations
+    restart: "no"
+    command: >
+      sh -c "kong migrations bootstrap || (kong migrations up && kong migrations finish)"
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kng-db
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE}
+      KONG_PG_USER: ${KONG_PG_USER}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
+    depends_on:
+      kng-db:
+        condition: service_healthy
+
+  kng-gateway:
+    image: kong:3.9
+    container_name: banquito-kng-gateway
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kng-db
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE}
+      KONG_PG_USER: ${KONG_PG_USER}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_LOG_LEVEL: ${KONG_LOG_LEVEL:-notice}
+    ports:
+      - "8000:8000"
+      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:8100:8100"
+    depends_on:
+      kng-db:
+        condition: service_healthy
+      kng-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  kng-sync:
+    image: kong/deck:latest
+    container_name: banquito-kng-sync
+    restart: "no"
+    entrypoint: ["sh", "/kong/render-kong.sh"]
+    environment:
+      CORE_BCK_SEC_URL: ${CORE_BCK_SEC_URL}
+      CORE_BCK_CLI_URL: ${CORE_BCK_CLI_URL}
+      CORE_BCK_ADM_URL: ${CORE_BCK_ADM_URL}
+      CORE_BCK_CON_URL: ${CORE_BCK_CON_URL}
+      CORE_BCK_TRA_URL: ${CORE_BCK_TRA_URL}
+      CORE_BCK_DOC_URL: ${CORE_BCK_DOC_URL}
+      CORE_BCK_NOT_URL: ${CORE_BCK_NOT_URL}
+      SW_BCK_ENR_URL: ${SW_BCK_ENR_URL}
+      SW_BCK_FAC_URL: ${SW_BCK_FAC_URL}
+      SW_BCK_LOT_URL: ${SW_BCK_LOT_URL}
+      SW_BCK_PIN_URL: ${SW_BCK_PIN_URL}
+      SW_BCK_REP_URL: ${SW_BCK_REP_URL}
+      CORE_FR_WEB_URL: ${CORE_FR_WEB_URL}
+      CORE_FR_VEN_URL: ${CORE_FR_VEN_URL}
+      SW_FR_APP_URL: ${SW_FR_APP_URL}
+    volumes:
+      - ./:/kong:ro
+    depends_on:
+      kng-gateway:
+        condition: service_healthy
+
+  kng-portainer:
+    image: portainer/portainer-ce:2.27.9
+    container_name: banquito-kng-portainer
+    restart: unless-stopped
+    command: ["-H", "unix:///var/run/docker.sock"]
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - kng_portainer_data:/data
+    depends_on:
+      kng-gateway:
+        condition: service_started
+
+  kng-konga-db:
+    image: postgres:11-alpine
+    container_name: banquito-kng-konga-db
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      POSTGRES_DB: ${KONGA_PG_DATABASE}
+      POSTGRES_USER: ${KONGA_PG_USER}
+      POSTGRES_PASSWORD: ${KONGA_PG_PASSWORD}
+    volumes:
+      - kng_konga_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KONGA_PG_USER} -d ${KONGA_PG_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  kng-konga-prepare:
+    image: pantsel/konga:0.14.9
+    container_name: banquito-kng-konga-prepare
+    restart: "no"
+    command:
+      - "-c"
+      - prepare
+      - "-a"
+      - postgres
+      - "-u"
+      - postgresql://${KONGA_PG_USER}:${KONGA_PG_PASSWORD}@kng-konga-db:5432/${KONGA_PG_DATABASE}
+    depends_on:
+      kng-konga-db:
+        condition: service_healthy
+
+  kng-konga:
+    image: pantsel/konga:0.14.9
+    container_name: banquito-kng-konga
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      DB_ADAPTER: postgres
+      DB_HOST: kng-konga-db
+      DB_PORT: 5432
+      DB_USER: ${KONGA_PG_USER}
+      DB_PASSWORD: ${KONGA_PG_PASSWORD}
+      DB_DATABASE: ${KONGA_PG_DATABASE}
+      NODE_ENV: production
+      KONGA_HOOK_TIMEOUT: 120000
+    ports:
+      - "127.0.0.1:1337:1337"
+    depends_on:
+      kng-gateway:
+        condition: service_started
+      kng-konga-db:
+        condition: service_healthy
+      kng-konga-prepare:
+        condition: service_completed_successfully
+
+volumes:
+  kong_postgres_data:
+  kng_portainer_data:
+  kng_konga_postgres_data:

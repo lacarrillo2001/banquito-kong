@@ -1,0 +1,135 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  # ==========================
+  # CORE BACKEND
+  # ==========================
+
+  - name: banquito-core-contable
+    url: http://34.134.185.175:8007
+    routes:
+      - name: core-contable-route
+        paths:
+          - /api/v1/core/contable
+        strip_path: false
+
+  - name: banquito-core-admin
+    url: http://34.134.185.175:8008
+    routes:
+      - name: core-admin-route
+        paths:
+          - /api/v1/core/admin
+        strip_path: false
+
+  - name: banquito-core-transaccional
+    url: http://34.134.185.175:8009
+    routes:
+      - name: core-transaccional-route
+        paths:
+          - /api/v1/core/transaccional
+        strip_path: false
+
+  - name: banquito-core-clientes
+    url: http://34.134.185.175:8010
+    routes:
+      - name: core-clientes-route
+        paths:
+          - /api/v1/core/clientes
+        strip_path: false
+
+  - name: banquito-core-notification-service
+    url: http://34.134.185.175:8011
+    routes:
+      - name: core-notification-route
+        paths:
+          - /api/v1/core/notifications
+        strip_path: false
+
+  - name: banquito-core-security
+    url: http://34.134.185.175:8012
+    routes:
+      - name: core-security-route
+        paths:
+          - /api/v1/core/security
+        strip_path: false
+
+  - name: banquito-core-document-service
+    url: http://34.134.185.175:8013
+    routes:
+      - name: core-document-route
+        paths:
+          - /api/v1/core/documents
+        strip_path: false
+
+  # ==========================
+  # SWITCH BACKEND
+  # ==========================
+
+  - name: banquito-sw-enrutamiento
+    url: http://34.134.185.175:8014
+    routes:
+      - name: sw-enrutamiento-route
+        paths:
+          - /api/v1/sw/enrutamiento
+        strip_path: false
+
+  - name: banquito-sw-facturacion
+    url: http://34.134.185.175:8015
+    routes:
+      - name: sw-facturacion-route
+        paths:
+          - /api/v1/sw/facturacion
+        strip_path: false
+
+  - name: banquito-sw-lotes
+    url: http://34.134.185.175:8016
+    routes:
+      - name: sw-lotes-route
+        paths:
+          - /api/v1/sw/lotes
+        strip_path: false
+
+  - name: banquito-sw-pagos-internos
+    url: http://34.134.185.175:8017
+    routes:
+      - name: sw-pagos-internos-route
+        paths:
+          - /api/v1/sw/pagos-internos
+        strip_path: false
+
+  - name: banquito-sw-reportes
+    url: http://34.134.185.175:8018
+    routes:
+      - name: sw-reportes-route
+        paths:
+          - /api/v1/sw/reportes
+        strip_path: false
+
+  # ==========================
+  # FRONTENDS
+  # ==========================
+
+  - name: banquito-core-banca-web
+    url: http://34.42.234.78:3000
+    routes:
+      - name: core-banca-web-route
+        paths:
+          - /banca
+        strip_path: true
+
+  - name: banquito-core-ventanilla-frontend
+    url: http://34.42.234.78:3001
+    routes:
+      - name: core-ventanilla-frontend-route
+        paths:
+          - /ventanilla
+        strip_path: true
+
+  - name: banquito-sw-frontend
+    url: http://34.42.234.78:3002
+    routes:
+      - name: sw-frontend-route
+        paths:
+          - /switch
+        strip_path: true

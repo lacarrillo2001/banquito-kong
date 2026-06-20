@@ -3,7 +3,7 @@ _transform: true
 
 services:
   - name: identity-access-service
-    url: http://identity-access-service:8081
+    url: http://${IDENTITY_HOST}:${IDENTITY_PORT}
     routes:
       - name: identity-auth-routes
         paths: [/api/v1/auth]
@@ -13,28 +13,28 @@ services:
         strip_path: false
 
   - name: core-customer-service
-    url: http://core-customer-service:8082
+    url: http://${CUSTOMER_HOST}:${CUSTOMER_PORT}
     routes:
       - name: customer-routes
         paths: [/api/v1/customers]
         strip_path: false
 
   - name: core-admin-service
-    url: http://core-admin-service:8083
+    url: http://${ADMIN_HOST}:${ADMIN_PORT}
     routes:
       - name: admin-routes
         paths: [/api/v1/admin]
         strip_path: false
 
   - name: core-accounting-service
-    url: http://core-accounting-service:8084
+    url: http://${ACCOUNTING_HOST}:${ACCOUNTING_PORT}
     routes:
       - name: accounting-routes
         paths: [/api/v1/accounting]
         strip_path: false
 
   - name: core-account-service
-    url: http://core-account-service:8085
+    url: http://${ACCOUNT_HOST}:${ACCOUNT_PORT}
     routes:
       - name: account-routes
         paths:
@@ -44,14 +44,14 @@ services:
         strip_path: false
 
   - name: document-service
-    url: http://document-service:8086
+    url: http://${DOCUMENT_HOST}:${DOCUMENT_PORT}
     routes:
       - name: document-routes
         paths: [/api/v1/documents]
         strip_path: false
 
   - name: notification-service
-    url: http://notification-service:8087
+    url: http://${NOTIFICATION_HOST}:${NOTIFICATION_PORT}
     routes:
       - name: notification-routes
         paths: [/api/v1/notifications]

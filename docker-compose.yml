@@ -436,89 +436,6 @@ services:
         condition: service_started
     networks: [banquito-net]
 
-  kong-database:
-    image: postgres:15-alpine
-    container_name: banquito-kong-postgres
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      POSTGRES_DB: ${KONG_PG_DATABASE}
-      POSTGRES_USER: ${KONG_PG_USER}
-      POSTGRES_PASSWORD: ${KONG_PG_PASSWORD}
-    volumes:
-      - kong_postgres_data:/var/lib/postgresql/data
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${KONG_PG_USER} -d ${KONG_PG_DATABASE}"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
-
-  kong-migrations:
-    image: kong:3.9
-    container_name: banquito-kong-migrations
-    restart: "no"
-    command: >
-      sh -c "kong migrations bootstrap || (kong migrations up && kong migrations finish)"
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-database
-      KONG_PG_DATABASE: ${KONG_PG_DATABASE}
-      KONG_PG_USER: ${KONG_PG_USER}
-      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
-    depends_on:
-      kong-database:
-        condition: service_healthy
-    networks: [banquito-net]
-
-  kong-gateway:
-    image: kong:3.9
-    container_name: banquito-kong-gateway
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-database
-      KONG_PG_DATABASE: ${KONG_PG_DATABASE}
-      KONG_PG_USER: ${KONG_PG_USER}
-      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
-      KONG_PROXY_LISTEN: 0.0.0.0:8000
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_STATUS_LISTEN: 0.0.0.0:8100
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_LOG_LEVEL: ${KONG_LOG_LEVEL:-notice}
-    ports:
-      - "8000:8000"
-      - "127.0.0.1:8100:8100"
-    depends_on:
-      kong-database:
-        condition: service_healthy
-      kong-migrations:
-        condition: service_completed_successfully
-    networks: [banquito-net]
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 30s
-
-  deck-sync:
-    image: kong/deck:latest
-    container_name: banquito-deck-sync
-    restart: "no"
-    command: ["gateway", "sync", "/kong/kong.yml", "--kong-addr", "http://kong-gateway:8001"]
-    volumes:
-      - ./kong:/kong:ro
-    depends_on:
-      kong-gateway:
-        condition: service_healthy
-    networks: [banquito-net]
-
 networks:
   banquito-net:
     name: banquito-net
@@ -532,4 +449,3 @@ volumes:
   mysql_accounting_data:
   mysql_notification_data:
   mongo_document_data:
-  kong_postgres_data:

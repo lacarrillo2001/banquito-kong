@@ -1,0 +1,49 @@
+flowchart LR
+    U[Usuarios] --> K[Kong Gateway\n:8000]
+
+    subgraph Frontends
+        CFW[core-fr-web\n/web]
+        CFV[core-fr-ventanilla\n/ventanilla]
+        SFA[sw-fr-app\n/switch]
+    end
+
+    subgraph CoreBackends
+        CBS[core-bck-security]
+        CBC[core-bck-clientes]
+        CBA[core-bck-admin]
+        CBCO[core-bck-contable]
+        CBT[core-bck-transaccional]
+        CBD[core-bck-documentos]
+        CBN[core-bck-notificaciones]
+    end
+
+    subgraph SwitchBackends
+        SBE[sw-bck-enrutamiento]
+        SBF[sw-bck-facturacion]
+        SBL[sw-bck-lotes]
+        SBP[sw-bck-pagos-internos]
+        SBR[sw-bck-reportes]
+    end
+
+    K --> CFW
+    K --> CFV
+    K --> SFA
+
+    K --> CBS
+    K --> CBC
+    K --> CBA
+    K --> CBCO
+    K --> CBT
+    K --> CBD
+    K --> CBN
+
+    K --> SBE
+    K --> SBF
+    K --> SBL
+    K --> SBP
+    K --> SBR
+
+    classDef front fill:#dff2ff,stroke:#2a6f97,color:#123;
+    classDef back fill:#e8f7df,stroke:#4a7c59,color:#132;
+    class CFW,CFV,SFA front;
+    class CBS,CBC,CBA,CBCO,CBT,CBD,CBN,SBE,SBF,SBL,SBP,SBR back;
