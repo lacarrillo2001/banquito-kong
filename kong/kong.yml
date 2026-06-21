@@ -73,7 +73,7 @@ services:
         strip_path: false
 
   - name: switch-batch-service
-    url: http://10.128.0.9:8081
+    url: http://10.128.0.9:8016
     routes:
       - name: switch-batch-upload
         methods: [POST, OPTIONS]
@@ -105,7 +105,7 @@ services:
         strip_path: false
 
   - name: switch-reporting-service
-    url: http://10.128.0.9:8085
+    url: http://10.128.0.9:8019
     routes:
       - name: switch-reporting-summary
         methods: [GET, OPTIONS]
