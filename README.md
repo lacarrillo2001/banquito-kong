@@ -36,6 +36,30 @@ docker logs banquito-deck-sync
 curl.exe -i http://localhost:8000/api/v1/auth/login
 ```
 
+## Despliegue automatico con GitHub Actions
+
+El repositorio incluye el workflow `.github/workflows/deploy.yml` para desplegar automaticamente en la VM `mapi` cada vez que hay un `push` a `main` con cambios en `docker-compose.yml`, `kong/**` o el mismo workflow.
+
+Antes de usarlo, configura estos secrets en GitHub:
+
+- `GCP_HOST`: IP publica o hostname de la VM
+- `GCP_USER`: usuario SSH, por ejemplo `Andresl`
+- `GCP_SSH_KEY`: clave privada SSH en formato PEM
+- `GCP_PORT`: opcional, por defecto `22`
+
+El workflow entra por SSH y ejecuta este flujo en `~/banquito-kong`:
+
+```bash
+git pull origin main
+docker compose pull
+docker compose up -d
+docker image prune -f
+docker compose ps
+curl -f http://127.0.0.1:8100/status
+```
+
+El archivo `.env` debe existir solo en la VM y no debe subirse al repositorio.
+
 ## Cambios requeridos en `backdocker`
 
 Los servicios Core no pueden quedarse solo con `expose`, porque Kong vive en otra VM. Debes publicar al host privado los puertos HTTP REST `8081` a `8087`. Si el Switch corre en la misma VM `backdocker`, tambien debes publicar `8081` y `8085` del compose del Switch para que Kong pueda exponer `/api/v1/batches...`.
