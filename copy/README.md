@@ -18,7 +18,7 @@ Topologia prevista:
 
 - `docker-compose.yml`: stack de Kong para VM separada
 - `.env.example`: plantilla minima de entorno
-- `kong/kong.yml`: rutas y plugins para Core y Switch via `10.128.0.9`
+- `kong/kong.yml`: rutas y plugins para Core via `10.128.0.9`
 
 ## Levantamiento en `mapi`
 
@@ -38,7 +38,7 @@ curl.exe -i http://localhost:8000/api/v1/auth/login
 
 ## Cambios requeridos en `backdocker`
 
-Los servicios Core no pueden quedarse solo con `expose`, porque Kong vive en otra VM. Debes publicar al host privado los puertos HTTP REST `8081` a `8087`. Si el Switch corre en la misma VM `backdocker`, tambien debes publicar `8081` y `8085` del compose del Switch para que Kong pueda exponer `/api/v1/batches...`.
+Los servicios Core no pueden quedarse solo con `expose`, porque Kong vive en otra VM. Debes publicar al host privado los puertos HTTP REST `8081` a `8087`.
 
 Ejemplo de ajuste en el compose de Core:
 
@@ -74,34 +74,16 @@ notification-service:
 
 No hace falta publicar los puertos gRPC `9092` a `9097` para Kong.
 
-Si el Switch usa `docker-compose.cloud.hub.yml`, los puertos minimos hacia Kong son:
-
-```yaml
-batch-service:
-  ports:
-    - "10.128.0.9:8081:8081"
-
-reporting-service:
-  ports:
-    - "10.128.0.9:8085:8085"
-```
-
 ## Firewall recomendado
 
 Permitir solo trafico privado desde `10.128.0.8` hacia `10.128.0.9` en:
 
 - TCP `8081-8087`
 
-Si Kong debe publicar endpoints del Switch desde otra VM, incluir tambien:
-
-- TCP `8081`
-- TCP `8085`
-
 No abrir esos puertos a Internet.
 
 ## Notas
 
 - Si la IP privada de `backdocker` cambia, actualiza `kong/kong.yml`.
-- Si el Switch se mueve a otra VM distinta de Core, actualiza `kong/kong.yml` para que `switch-batch-service` y `switch-reporting-service` apunten a la nueva IP privada.
 - Si luego tienes DNS privado, conviene cambiar `10.128.0.9` por un hostname interno estable.
 - Esta carpeta no reemplaza `banquito-kong`; solo agrega una variante de despliegue para VMs separadas.
